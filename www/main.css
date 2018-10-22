@@ -1,0 +1,13 @@
+body {
+    font-family: sans-serif;
+    text-align: center;
+}
+
+canvas {
+    border: 1px solid #888;
+    border-radius: 4px;
+}
+
+footer, footer a {
+    color: #888;
+}
