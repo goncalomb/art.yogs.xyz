@@ -2,7 +2,7 @@
 
     let paintings = [
         ['art', 'art?'],
-        ['colors', 'colors on canvas'],
+        // ['colors', 'colors on canvas'],
     ]
 
     class Painting {
@@ -26,6 +26,7 @@
         preload() {
             // background
             this.load.image('bg', 'game/assets/bg.png');
+            this.load.image('lewis', 'game/assets/lewis.png');
             // paintings
             paintings.forEach((p) => {
                 this.load.image(p[0], 'game/assets/paintings/' + p[0] + '.png');
@@ -44,12 +45,12 @@
 
             // background
             this.add.image(0, 0, 'bg').setOrigin(0, 0).setScale(4);
-            // paintings
-            let x = 350, y = 104;
-            paintings.forEach((p) => {
-                new Painting(this, p[0], x, y);
-                x += 145;
-            });
+
+            // initial objects
+            new Painting(this, paintings[0][0], 465, 108);
+            this.matter.add.sprite(630, 111, 'lewis', null, {
+                friction: 1,
+            }).setScale(2);
         }
 
         update() {
