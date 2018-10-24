@@ -3,16 +3,10 @@
 set -e
 cd "$(dirname -- "$0")"
 
-DIR_OUTPUT="$(readlink -f "../www/game/assets/yogs-art")"
-mkdir -p "$DIR_OUTPUT"
-
-mkdir -p yogs-art
-cd yogs-art
-
-dl-ebay-art() {
+dl-art() {
     echo "$2"
     if [ ! -f "$2.jpg" ]; then
-        curl -#Lo "$2.jpg" "https://i.ebayimg.com/images/g/$1/s-l2000.jpg" || true
+        curl -#Lo "$2.jpg" "$1" || true
     fi
     W=$(($3*20))
     H=$(($4*20))
@@ -21,6 +15,27 @@ dl-ebay-art() {
         -crop "${W}x${H}+0+0" +repage \
         "$DIR_OUTPUT/$2.jpg"
 }
+
+dl-ebay-art() {
+    dl-art "https://i.ebayimg.com/images/g/$1/s-l2000.jpg" "$2" "$3" "$4" "$5" "$6" "$7" "$8"
+}
+
+# other art
+
+DIR_OUTPUT="$(readlink -f "../www/game/assets")"
+mkdir -p "$DIR_OUTPUT"
+
+# https://www.instagram.com/p/BpDMo26h3Cu/
+dl-art "https://instagram.fopo1-1.fna.fbcdn.net/vp/e5f22dd44d31828f19dbe4c8497482c9/5C841887/t51.2885-15/e35/42632018_237301193806708_6764405641855447960_n.jpg" \
+    girl-with-balloon 30 40 "270,240" "828,240" "828,1040" "270,1040" # 30x40, Girl with Balloon
+
+# yogs art
+
+DIR_OUTPUT="$(readlink -f "../www/game/assets/yogs-art")"
+mkdir -p "$DIR_OUTPUT"
+
+mkdir -p yogs-art
+cd yogs-art
 
 # https://www.ebay.co.uk/sch/m.html?LH_Complete=1&_ssn=yogscastltd&_sop=14
 # http://archive.fo/3Uqqz

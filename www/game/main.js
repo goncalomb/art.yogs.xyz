@@ -45,6 +45,7 @@
             this.load.image('bg', 'game/assets/bg.png');
             this.load.image('art', 'game/assets/art.png');
             this.load.image('lewis', 'game/assets/lewis.png');
+            this.load.image('girl-with-balloon', 'game/assets/girl-with-balloon.jpg');
             yogsArt.forEach((p) => {
                 this.load.image(p[0], 'game/assets/yogs-art/' + p[0] + '.jpg');
             });
@@ -68,6 +69,8 @@
             this.matter.add.sprite(630, 111, 'lewis', null, {
                 friction: 1,
             }).setScale(2);
+
+            new Painting(this, 'girl-with-balloon', 630, 350, 0.25);
 
             let extraArt = yogsArt.filter((p) => {
                 if (p[0] == 'lewis_11') {
