@@ -1,15 +1,33 @@
 (function() {
 
-    let paintings = [
-        ['art', 'art?'],
-        // ['colors', 'colors on canvas'],
-    ]
+    let yogsArt = [
+        ['lewis_11', 'Lewis #11 - Mouldy Heart'],
+        ['lewis_10', 'Lewis #10'],
+        ['lewis_16', 'Lewis #16 - Red Mist'],
+        ['lewis_28', 'Lewis #28'],
+        ['lewis_33', 'Lewis #33'],
+        ['lewis_17', 'Lewis #17'],
+        ['lewis_31', 'Lewis #31'],
+        ['lewis_7', 'Lewis #7 - Bladerunner'],
+        ['lewis_34', 'Lewis #34'],
+        ['lewis_22', 'Lewis #22'],
+        ['lewis_20', 'Lewis #20'],
+        ['lewis_26', 'Lewis #26'],
+        ['lewis_27', 'Lewis #27'],
+        ['lewis_15', 'Lewis #15'],
+        ['booby_mermaid', 'Booby Mermaid'],
+        ['lewis_14', 'Lewis #14'],
+        ['lewis_12', 'Lewis #12'],
+        // ['dope_asaurus', 'Dope-asaurus'],
+        ['ttt_bee_king', 'TTT Bee King'],
+        // ['brontosaurmus', 'Brontosaurmus'],
+    ];
 
     class Painting {
-        constructor(scene, name, x, y) {
+        constructor(scene, name, x, y, scale) {
             scene.matter.add.sprite(x, y, name, null, {
                 friction: 0.4,
-            });
+            }).setScale(scale || 1);
         }
     }
 
@@ -24,12 +42,11 @@
         }
 
         preload() {
-            // background
             this.load.image('bg', 'game/assets/bg.png');
+            this.load.image('art', 'game/assets/art.png');
             this.load.image('lewis', 'game/assets/lewis.png');
-            // paintings
-            paintings.forEach((p) => {
-                this.load.image(p[0], 'game/assets/paintings/' + p[0] + '.png');
+            yogsArt.forEach((p) => {
+                this.load.image(p[0], 'game/assets/yogs-art/' + p[0] + '.jpg');
             });
         }
 
@@ -47,10 +64,30 @@
             this.add.image(0, 0, 'bg').setOrigin(0, 0).setScale(4);
 
             // initial objects
-            new Painting(this, paintings[0][0], 465, 108);
+            new Painting(this, 'art', 465, 108);
             this.matter.add.sprite(630, 111, 'lewis', null, {
                 friction: 1,
             }).setScale(2);
+
+            let extraArt = yogsArt.filter((p) => {
+                if (p[0] == 'lewis_11') {
+                    new Painting(this, p[0], 430, 500, 0.5);
+                } else if (p[0] == 'booby_mermaid') {
+                    new Painting(this, p[0], 475, 340, 0.5);
+                } else if (p[0] == 'ttt_bee_king') {
+                    new Painting(this, p[0], 620, 540, 0.5);
+                } else {
+                    return true;
+                }
+                return false;
+            });
+
+            let pos = [[950, 200], [800, 450], [1050, 450]];
+            for (let i = 0; i < pos.length; i++) {
+                let j = Math.floor(Math.random() * extraArt.length);
+                let p = extraArt.splice(j, 1)[0];
+                new Painting(this, p[0], pos[i][0], pos[i][1], 0.5);
+            }
         }
 
         update() {
@@ -78,6 +115,7 @@
         physics: {
             default: 'matter',
             matter: {
+                gravity: { y: 2.5 },
                 debug: false,
             },
         },
