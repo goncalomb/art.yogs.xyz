@@ -24,10 +24,189 @@
     ];
 
     class Painting {
-        constructor(scene, name, x, y, scale) {
-            scene.matter.add.sprite(x, y, name, null, {
+        constructor(scene, name, x, y, scale, rotation) {
+            this.scene = scene;
+            this.strips = [];
+
+            // create sprite
+            this.gameObject = this.scene.matter.add.sprite(x, y, name, 0, {
                 friction: 0.4,
-            }).setScale(scale || 1);
+            }).setDepth(1).setScale(scale || 1).setRotation(rotation || 0);
+            this.gameObject.painting = this; // mark sprite as painting
+            this.gameObject._crop = this.gameObject.resetCropObject(); // XXX: Phaser 3 bug?
+        }
+
+        createStrips(width, spacing) {
+            // scale values
+            width /= this.gameObject.scaleX;
+            spacing /= this.gameObject.scaleX;
+
+            let halfStripWidth = width/2;
+            let hw = this.gameObject.width/2;
+
+            // function to create a strip at x
+            let createStrip = (x) => {
+                // limit strip width
+                let p0 = Math.max(0, hw - halfStripWidth + x);
+                let p1 = Math.min(this.gameObject.width, hw + halfStripWidth + x);
+                let stripWidth = p1 - p0;
+
+                // discard strips outside texture
+                if (p0 >= this.gameObject.width) return;
+                if (p1 <= 0) return;
+
+                // calculate offset based on x and strip width
+                let d = x - Math.sign(x)*(width - stripWidth)/2;
+
+                // create strip
+                let strip = this.scene.matter.add.sprite(this.gameObject.x + d*this.gameObject.scaleX, this.gameObject.y, this.gameObject.texture.key, 0, {
+                    isStatic: true,
+                    friction: 0.4,
+                    mass: 0.1,
+                    shape: {
+                        type: 'rectangle',
+                        width: stripWidth * (0.4 + 0.1*Math.random()),
+                        height: this.gameObject.height * (0.5 + 0.2*Math.random()),
+                    },
+                }).setScale(this.gameObject.scaleX, this.gameObject.scaleY);
+                strip._crop = this.gameObject.resetCropObject(); // XXX: Phaser 3 bug?
+                strip.setCrop(p0, 0, stripWidth, this.gameObject.height);
+                strip.displayOriginX += d;
+
+                this.strips.push(strip);
+            }
+
+            // create all the strips
+            let x = 0
+            for (; x < hw; x += width + spacing) {
+                if (x == 0) {
+                    createStrip(0); // center strip
+                } else {
+                    createStrip(-x);
+                    createStrip(x);
+                }
+            }
+            // last strips can be smaller
+            createStrip(-x);
+            createStrip(x);
+        }
+    }
+
+    class Shredder {
+        constructor(scene, x, y) {
+            this.scene = scene;
+            this.x = x;
+            this.y = y;
+            this.painting = null;
+            this.shreddingDelay = null;
+            this.shredding = false;
+
+            // create sprite and collider
+            this.sprite = this.scene.add.image(x, y, 'shredder').setDepth(1).setScale(4);
+            this.scene.matter.add.rectangle(x, y + 4, 256, 8, {
+                isStatic: true,
+            });
+
+            // create trigger
+            this.trigger = this.scene.matter.add.rectangle(x, y - 16, 200, 16, {
+                isStatic: true,
+                isSensor: true,
+            });
+
+            // register trigger listeners
+            this.scene.matter.world.on('collisionactive', (event) => {
+                for (let i = 0, l = event.pairs.length; i < l; i++) {
+                    var pair = event.pairs[i];
+                    if (pair.bodyA == this.trigger) {
+                        this.onTriggerActive(pair.bodyB);
+                    } else if (pair.bodyB == this.trigger) {
+                        this.onTriggerActive(pair.bodyA);
+                    }
+                }
+            });
+            this.scene.matter.world.on('collisionend', (event) => {
+                for (let i = 0, l = event.pairs.length; i < l; i++) {
+                    var pair = event.pairs[i];
+                    if (pair.bodyA == this.trigger) {
+                        this.onTriggerEnd(pair.bodyB);
+                    } else if (pair.bodyB == this.trigger) {
+                        this.onTriggerEnd(pair.bodyA);
+                    }
+                }
+            });
+        }
+
+        onTriggerActive(body) {
+            if (body.gameObject.painting && !this.painting) {
+                // detect new painting
+                this.painting = body.gameObject.painting;
+                // move shredder sprite above painting sprite
+                this.scene.children.moveTo(this.sprite, this.scene.children.getIndex(this.painting.gameObject));
+                // set timer to start shredding
+                this.shreddingDelay = this.scene.time.addEvent({
+                    delay: 1000,
+                    callback: () => {
+                        this.shredding = true;
+                        this.painting.gameObject.setStatic(true);
+                        // align painting
+                        this.scene.tweens.add({
+                            targets: [this.painting.gameObject],
+                            rotation: 0,
+                            x: this.x,
+                            y: this.y - this.painting.gameObject.displayHeight/2,
+                            duration: 100,
+                            onComplete: () => { this.startShredding(); },
+                        });
+                    },
+                });
+            }
+        }
+
+        onTriggerEnd(body) {
+            if (!this.shredding && this.painting && body.gameObject.painting && this.painting.gameObject.body == body) {
+                // stop shredding timer if painting is removed
+                this.painting = null;
+                this.shreddingDelay.destroy();
+                this.shreddingDelay = null;
+                clearTimeout();
+            }
+        }
+
+        startShredding() {
+            // create painting strips
+            this.painting.createStrips(16, 4);
+
+            let w = this.painting.gameObject.width;
+            let h = this.painting.gameObject.height;
+
+            // shredding effect
+            this.scene.tweens.addCounter({
+                from: this.painting.gameObject.y,
+                to: this.y + this.painting.gameObject.displayHeight/2 + 8,
+                duration: 2000,
+                delay: 500,
+                onUpdate: (t) => {
+                    // move painting and strips
+                    this.painting.gameObject.y = t.data[0].current;
+                    this.painting.strips.forEach((strip) => {
+                        strip.y = t.data[0].current;
+                    });
+                    this.painting.gameObject.setCrop(0, 0, w, h * (1 - t.data[0].progress));
+                },
+                onComplete: () => {
+                    // remove painting and unfreeze strips
+                    this.painting.gameObject.destroy();
+                    this.painting.gameObject = null;
+                    this.painting.strips.forEach((strip) => {
+                        strip.setStatic(false);
+                        strip.setRotation(Math.random()*0.25);
+                    });
+
+                    // be ready to shred again
+                    this.painting = null;
+                    this.shredding = false;
+                }
+            });
         }
     }
 
@@ -45,6 +224,7 @@
             this.load.image('bg', 'game/assets/bg.png');
             this.load.image('art', 'game/assets/art.png');
             this.load.image('lewis', 'game/assets/lewis.png');
+            this.load.image('shredder', 'game/assets/shredder.png');
             this.load.image('girl-with-balloon', 'game/assets/girl-with-balloon.jpg');
             yogsArt.forEach((p) => {
                 this.load.image(p[0], 'game/assets/yogs-art/' + p[0] + '.jpg');
@@ -70,7 +250,8 @@
                 friction: 1,
             }).setScale(2);
 
-            new Painting(this, 'girl-with-balloon', 630, 350, 0.25);
+            new Shredder(this, 128 + 8, 300);
+            new Painting(this, 'girl-with-balloon', 160, 120, 0.25, 0.2);
 
             let extraArt = yogsArt.filter((p) => {
                 if (p[0] == 'lewis_11') {
@@ -95,14 +276,16 @@
 
         update() {
             var bodyB = this.mouseSpring.constraint.bodyB;
-            if (bodyB) {
+            if (bodyB && bodyB.gameObject && !bodyB.gameObject.isStatic()) {
                 if (!this.mouseBody) {
                     this.mouseBody = bodyB;
-                    this.mouseBody.collisionFilter.mask = ~2; // don't collide with platforms
+                    this.mouseBody.gameObject.setScale(this.mouseBody.gameObject.scaleX * 1.1);
+                    this.mouseBody.collisionFilter.mask = 0; // disable collisions
                     this.children.bringToTop(this.mouseBody.gameObject);
                 }
             } else if (this.mouseBody) {
-                this.mouseBody.collisionFilter.mask = ~0; // collide with everything
+                this.mouseBody.gameObject.setScale(this.mouseBody.gameObject.scaleX / 1.1);
+                this.mouseBody.collisionFilter.mask = ~0; // enable collisions
                 this.mouseBody = null;
             }
         }
