@@ -291,7 +291,7 @@
         }
     }
 
-    let game = new Phaser.Game({
+    let game = window.game = new Phaser.Game({
         parent: document.getElementsByTagName('main')[0],
         type: Phaser.AUTO,
         width: 1200,
@@ -307,5 +307,32 @@
         },
         scene: MainScene,
     });
+
+    // XXX: patch for Phaser.Input.InputManager.prototype.updateBounds
+    //      to calculate correct bounds in fullscreen (ignores black bars)
+    let updateBoundsOld = Phaser.Input.InputManager.prototype.updateBounds;
+    Phaser.Input.InputManager.prototype.updateBounds = function() {
+        // call old function
+        updateBoundsOld.call(this);
+        // detect fullscreen
+        if (this.bounds.x == 0 && this.bounds.y == 0) {
+            let ratio = this.game.config.width/this.game.config.height;
+            let nh = this.bounds.width/ratio;
+            if (nh < this.bounds.height) {
+                this.bounds.y = this.bounds.height/2 - nh/2;
+                this.bounds.height = nh;
+            }
+            let nw = this.bounds.height*ratio;
+            if (nw < this.bounds.width) {
+                this.bounds.x = this.bounds.width/2 - nw/2;
+                this.bounds.width = nw;
+            }
+        }
+    }
+
+    window.gameRequestFullscreen = function() {
+        game.canvas[game.device.fullscreen.request]();
+        game.scene.scenes[0].scene.restart();
+    };
 
 })();

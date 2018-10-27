@@ -3,9 +3,27 @@ body {
     text-align: center;
 }
 
-canvas {
-    border: 1px solid #888;
-    border-radius: 4px;
+
+@media screen and (max-width: 1219px) {
+    main {
+        height: 0;
+    }
+
+    .hide-small {
+        display: none;
+    }
+}
+
+@media screen and (min-width: 1220px) {
+    main {
+        display: inline-flex;
+        border: 1px solid #888;
+        border-radius: 4px;
+    }
+
+    .hide-large {
+        display: none;
+    }
 }
 
 footer, footer a {
