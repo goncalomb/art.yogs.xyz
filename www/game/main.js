@@ -222,6 +222,7 @@
 
         preload() {
             this.load.image('bg', 'game/assets/bg.png');
+            this.load.image('info', 'game/assets/info.png');
             this.load.image('lewis', 'game/assets/lewis.png');
             this.load.image('bananeee', 'game/assets/bananeee.png');
             this.load.image('shredder', 'game/assets/shredder.png');
@@ -243,6 +244,9 @@
 
             // background
             this.add.image(0, 0, 'bg').setOrigin(0, 0).setScale(4);
+
+            // info
+            this.add.image(40, 40, 'info').setOrigin(0, 0).setAlpha(0.75);
 
             // initial objects
             new Painting(this, 'bananeee', 465, 108, 0.3333);
