@@ -222,8 +222,8 @@
 
         preload() {
             this.load.image('bg', 'game/assets/bg.png');
-            this.load.image('art', 'game/assets/art.png');
             this.load.image('lewis', 'game/assets/lewis.png');
+            this.load.image('bananeee', 'game/assets/bananeee.png');
             this.load.image('shredder', 'game/assets/shredder.png');
             this.load.image('girl-with-balloon', 'game/assets/girl-with-balloon.jpg');
             yogsArt.forEach((p) => {
@@ -245,7 +245,7 @@
             this.add.image(0, 0, 'bg').setOrigin(0, 0).setScale(4);
 
             // initial objects
-            new Painting(this, 'art', 465, 108);
+            new Painting(this, 'bananeee', 465, 108, 0.3333);
             this.matter.add.sprite(630, 111, 'lewis', null, {
                 friction: 1,
             }).setScale(2);
