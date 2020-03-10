@@ -2,8 +2,4 @@ ServerSignature Off
 DirectoryIndex index.html
 DirectorySlash On
 AcceptPathInfo Off
-RewriteEngine On
 Options -MultiViews -Indexes -Includes -ExecCGI +FollowSymLinks
-
-RewriteCond %{HTTP_HOST} ^(?:www\.)(art\.yogs\.xyz)$
-RewriteRule .* %{REQUEST_SCHEME}://%1%{REQUEST_URI} [R=302,L]
